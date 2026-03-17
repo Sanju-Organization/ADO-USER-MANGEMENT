@@ -1,0 +1,52 @@
+trigger:
+  branches:
+    include:
+      - feature/*
+      - main
+
+pool: Default
+
+steps:
+  - script: npm ci
+    displayName: 'Install root dependencies'
+
+  - script: cd tmna_frontend && npm ci
+    displayName: 'Install frontend dependencies'
+
+  - script: cd tmna_frontend && npx playwright install --with-deps chromium
+    displayName: 'Install Playwright browsers'
+
+  - script: node tmna_backend/server.js &
+    displayName: 'Start backend server'
+    continueOnError: true
+
+  - script: sleep 5
+    displayName: 'Wait for backend to start'
+
+  - script: cd tmna_frontend && npm start &
+    displayName: 'Start React frontend'
+    continueOnError: true
+
+  - script: sleep 10
+    displayName: 'Wait for frontend to start'
+
+  - script: cd tmna_frontend && npx playwright test --reporter=junit
+    displayName: 'Run Playwright e2e tests'
+    continueOnError: true
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: 'tmna_frontend/test-results.xml'
+      mergeTestResults: true
+      failTaskOnFailedTests: false
+    displayName: 'Publish test results'
+    condition: always()
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: 'tmna_frontend/playwright-report'
+      artifact: 'playwright-report'
+      publishLocation: 'pipeline'
+    displayName: 'Publish Playwright report'
+    condition: always()
