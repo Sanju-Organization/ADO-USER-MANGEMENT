@@ -20,9 +20,7 @@ jobs:
       - name: Run AI Coding Agent
         run: |
           cd azure-repo
-          python ai_agent.py
-
-
+          //rest work
 
 GitHub Workflow
       ↓
